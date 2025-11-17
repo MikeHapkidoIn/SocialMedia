@@ -1,22 +1,18 @@
-// server.js - Servidor simple para Render
-import express from 'express'
-import path from 'path'
-import { fileURLToPath } from 'url'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-const app = express()
-const PORT = process.env.PORT || 3000
+// server.js
+const express = require('express');
+const path = require('path');
+const app = express();
+const PORT = process.env.PORT || 3000;
 
 // Servir archivos estáticos de la carpeta dist
-app.use(express.static(path.join(__dirname, 'dist')))
+app.use(express.static(path.join(__dirname, 'dist')));
 
-// Todas las rutas van al index.html (para React Router)
+// Para React Router - todas las rutas van al index.html
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'))
-})
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
 
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en puerto ${PORT}`)
-})
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📁 Serving files from: ${path.join(__dirname, 'dist')}`);
+});
