@@ -13,10 +13,24 @@ function App() {
       content: "¡Acabo de terminar mi portfolio con React y Tailwind! 🚀 La combinación es increíble para desarrollar rápido interfaces modernas.",
       time: "2h",
       likes: 24,
-      comments: 5,
+      comments: [
+        {
+          id: 1,
+          user: "Carlos López",
+          text: "¡Increíble Ana! ¿Podrías compartir algún tip de Tailwind?",
+          time: "1h"
+        },
+        {
+          id: 2, 
+          user: "María Rodríguez",
+          text: "Me encanta el diseño, muy limpio y profesional 👏",
+          time: "45m"
+        }
+      ],
       shares: 2,
       category: "Frontend",
-      categoryColor: "bg-blue-500"
+      categoryColor: "bg-blue-500",
+      technology: "React"
     },
     { 
       id: 2, 
@@ -29,15 +43,23 @@ function App() {
       content: "¿Alguien más está usando las nuevas features de ES2023? Los array methods nuevos han simplificado mucho mi código.",
       time: "4h",
       likes: 18,
-      comments: 3,
+      comments: [
+        {
+          id: 1,
+          user: "David Chen",
+          text: "Sí, el .toSorted() es un game changer!",
+          time: "3h"
+        }
+      ],
       shares: 1,
       category: "JavaScript",
-      categoryColor: "bg-yellow-500"
+      categoryColor: "bg-yellow-500",
+      technology: "JavaScript"
     },
     { 
       id: 3, 
       user: {
-        name: "María Rodríguez",
+        name: "María Rodríguez", 
         username: "@mariaui",
         avatar: "🎨",
         online: true
@@ -45,31 +67,54 @@ function App() {
       content: "Diseño vs Desarrollo: ¿Por qué elegir cuando puedes aprender ambos? Hoy comparto mis tips para colaboración efectiva entre equipos.",
       time: "6h",
       likes: 32,
-      comments: 8,
+      comments: [],
       shares: 4,
       category: "Diseño",
-      categoryColor: "bg-pink-500"
+      categoryColor: "bg-pink-500",
+      technology: "UI/UX"
     },
     { 
       id: 4, 
       user: {
         name: "David Chen",
-        username: "@davidbackend",
+        username: "@davidbackend", 
         avatar: "⚙️",
         online: true
       },
       content: "Acabo de optimizar nuestra API y reduje el tiempo de respuesta en un 60%. Node.js + Redis es una combinación increíble para performance.",
       time: "1d",
       likes: 45,
-      comments: 12,
+      comments: [
+        {
+          id: 1,
+          user: "Ana García", 
+          text: "¿Qué estrategias de caching usaste?",
+          time: "12h"
+        }
+      ],
       shares: 6,
       category: "Backend",
-      categoryColor: "bg-green-500"
+      categoryColor: "bg-green-500",
+      technology: "Node.js"
     }
   ])
 
   const [newPost, setNewPost] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('Todas')
+  const [selectedTechnology, setSelectedTechnology] = useState('Todas')
+  const [commentText, setCommentText] = useState('')
+  const [activeCommentPost, setActiveCommentPost] = useState(null)
+  const [newPostTechnology, setNewPostTechnology] = useState('React')
+  const [newPostCategory, setNewPostCategory] = useState('Frontend')
+
+  // Configuración de colores por categoría
+  const categoryColors = {
+    'Frontend': 'bg-blue-500',
+    'Backend': 'bg-green-500', 
+    'JavaScript': 'bg-yellow-500',
+    'Diseño': 'bg-pink-500',
+    'General': 'bg-purple-500'
+  }
 
   const addPost = () => {
     if (newPost.trim()) {
@@ -84,13 +129,16 @@ function App() {
         content: newPost,
         time: "Ahora",
         likes: 0,
-        comments: 0,
+        comments: [],
         shares: 0,
-        category: "General",
-        categoryColor: "bg-purple-500"
+        category: newPostCategory,
+        categoryColor: categoryColors[newPostCategory] || 'bg-purple-500',
+        technology: newPostTechnology
       }
       setPosts([post, ...posts])
       setNewPost('')
+      setNewPostTechnology('React')
+      setNewPostCategory('Frontend')
     }
   }
 
@@ -100,16 +148,47 @@ function App() {
     ))
   }
 
-  const categories = ["Todas", "Frontend", "Backend", "JavaScript", "Diseño", "General"]
+  const addComment = (postId) => {
+    if (commentText.trim() && activeCommentPost === postId) {
+      setPosts(posts.map(post => 
+        post.id === postId 
+          ? { 
+              ...post, 
+              comments: [
+                ...post.comments,
+                {
+                  id: Date.now(),
+                  user: "Tú",
+                  text: commentText,
+                  time: "Ahora"
+                }
+              ]
+            }
+          : post
+      ))
+      setCommentText('')
+      setActiveCommentPost(null)
+    }
+  }
 
-  const filteredPosts = selectedCategory === "Todas" 
-    ? posts 
-    : posts.filter(post => post.category === selectedCategory)
+  const toggleCommentInput = (postId) => {
+    setActiveCommentPost(activeCommentPost === postId ? null : postId)
+    setCommentText('')
+  }
+
+  const categories = ["Todas", "Frontend", "Backend", "JavaScript", "Diseño", "General"]
+  const technologies = ["Todas", "React", "Vue", "Angular", "Node.js", "JavaScript", "Python", "UI/UX", "TypeScript"]
+
+  const filteredPosts = posts.filter(post => {
+    const categoryMatch = selectedCategory === "Todas" || post.category === selectedCategory
+    const technologyMatch = selectedTechnology === "Todas" || post.technology === selectedTechnology
+    return categoryMatch && technologyMatch
+  })
 
   const stats = {
     totalPosts: posts.length,
     totalLikes: posts.reduce((sum, post) => sum + post.likes, 0),
-    totalComments: posts.reduce((sum, post) => sum + post.comments, 0),
+    totalComments: posts.reduce((sum, post) => sum + post.comments.length, 0),
     activeUsers: posts.filter(post => post.user.online).length
   }
 
@@ -151,20 +230,44 @@ function App() {
       <main className="max-w-7xl mx-auto px-4 py-8">
         
         {/* Filtros */}
-        <div className="flex flex-wrap gap-2 mb-8">
-          {categories.map(category => (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                selectedCategory === category
-                  ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/25'
-                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-              }`}
-            >
-              {category}
-            </button>
-          ))}
+        <div className="flex flex-wrap gap-4 mb-8">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Filtrar por categoría:</label>
+            <div className="flex flex-wrap gap-2">
+              {categories.map(category => (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                    selectedCategory === category
+                      ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/25'
+                      : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Filtrar por tecnología:</label>
+            <div className="flex flex-wrap gap-2">
+              {technologies.map(tech => (
+                <button
+                  key={tech}
+                  onClick={() => setSelectedTechnology(tech)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                    selectedTechnology === tech
+                      ? 'bg-green-500 text-white shadow-lg shadow-green-500/25'
+                      : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                  }`}
+                >
+                  {tech}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -187,6 +290,34 @@ function App() {
                   className="w-full p-3 border border-slate-300 rounded-xl mb-3 resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   rows="3"
                 />
+
+                {/* Selector de Categoría */}
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Categoría:</label>
+                  <select 
+                    value={newPostCategory}
+                    onChange={(e) => setNewPostCategory(e.target.value)}
+                    className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {categories.filter(cat => cat !== "Todas").map(category => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Selector de Tecnología */}
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Tecnología:</label>
+                  <select 
+                    value={newPostTechnology}
+                    onChange={(e) => setNewPostTechnology(e.target.value)}
+                    className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {technologies.filter(tech => tech !== "Todas").map(tech => (
+                      <option key={tech} value={tech}>{tech}</option>
+                    ))}
+                  </select>
+                </div>
                 
                 <button 
                   onClick={addPost}
@@ -246,10 +377,13 @@ function App() {
                       <span className="text-slate-400 text-sm">{post.time}</span>
                     </div>
                     
-                    {/* Category */}
+                    {/* Categoría y Tecnología */}
                     <div className="flex justify-between items-center">
                       <span className={`${post.categoryColor} text-white px-3 py-1 rounded-full text-xs font-medium`}>
                         {post.category}
+                      </span>
+                      <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-medium">
+                        {post.technology}
                       </span>
                     </div>
                   </div>
@@ -261,8 +395,54 @@ function App() {
                     </p>
                   </div>
 
+                  {/* Comentarios */}
+                  {post.comments.length > 0 && (
+                    <div className="px-6 py-4 bg-slate-50 border-t border-slate-100">
+                      <h4 className="text-sm font-semibold text-slate-700 mb-2">Comentarios:</h4>
+                      <div className="space-y-3">
+                        {post.comments.map(comment => (
+                          <div key={comment.id} className="bg-white rounded-lg p-3 border border-slate-200">
+                            <div className="flex justify-between items-start mb-1">
+                              <span className="font-medium text-slate-800 text-sm">{comment.user}</span>
+                              <span className="text-xs text-slate-400">{comment.time}</span>
+                            </div>
+                            <p className="text-slate-600 text-sm">{comment.text}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Card Footer */}
                   <div className="px-6 py-4 bg-slate-50 border-t border-slate-100">
+                    {/* Input de comentario */}
+                    {activeCommentPost === post.id && (
+                      <div className="mb-4">
+                        <textarea
+                          value={commentText}
+                          onChange={(e) => setCommentText(e.target.value)}
+                          placeholder="Escribe tu comentario..."
+                          className="w-full p-3 border border-slate-300 rounded-lg text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          rows="2"
+                        />
+                        <div className="flex space-x-2 mt-2">
+                          <button 
+                            onClick={() => addComment(post.id)}
+                            disabled={!commentText.trim()}
+                            className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            Comentar
+                          </button>
+                          <button 
+                            onClick={() => toggleCommentInput(post.id)}
+                            className="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-100 text-sm transition-colors"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
                         <button 
@@ -275,11 +455,14 @@ function App() {
                           <span className="text-sm font-medium">{post.likes}</span>
                         </button>
                         
-                        <button className="flex items-center space-x-1 text-slate-500 hover:text-blue-500 transition-colors group">
+                        <button 
+                          onClick={() => toggleCommentInput(post.id)}
+                          className="flex items-center space-x-1 text-slate-500 hover:text-blue-500 transition-colors group"
+                        >
                           <div className="w-8 h-8 rounded-full bg-white group-hover:bg-blue-50 flex items-center justify-center transition-colors border border-slate-200">
                             💬
                           </div>
-                          <span className="text-sm font-medium">{post.comments}</span>
+                          <span className="text-sm font-medium">{post.comments.length}</span>
                         </button>
                         
                         <button className="flex items-center space-x-1 text-slate-500 hover:text-green-500 transition-colors group">
@@ -308,7 +491,7 @@ function App() {
                   <span className="text-4xl">📝</span>
                 </div>
                 <h3 className="text-xl font-semibold text-slate-600 mb-2">No hay publicaciones</h3>
-                <p className="text-slate-500">Sé el primero en compartir en esta categoría</p>
+                <p className="text-slate-500">No se encontraron posts con los filtros seleccionados</p>
               </div>
             )}
           </div>
